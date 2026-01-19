@@ -1,0 +1,61 @@
+# Prometheus Configuration for Agentic Observability Platform
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'observability-demo'
+    env: 'development'
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files: []
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Observability Platform API
+  - job_name: 'observability-platform'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['app:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):\d+'
+        replacement: '${1}'
+
+  # Pushgateway for demo metrics
+  - job_name: 'pushgateway'
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+
+  # Node exporter (if deployed)
+  - job_name: 'node'
+    static_configs:
+      - targets: []
+
+  # Demo application metrics
+  - job_name: 'demo-services'
+    static_configs:
+      - targets: []
+        labels:
+          env: 'demo'
+
+# Remote write for long-term storage (optional)
+# remote_write:
+#   - url: "http://remote-storage:9201/write"
+
+# Remote read from long-term storage (optional)
+# remote_read:
+#   - url: "http://remote-storage:9201/read"
